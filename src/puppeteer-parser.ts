@@ -1,4 +1,5 @@
 import puppeteer, { type Page } from 'puppeteer';
+import fs from 'fs';
 
 interface ProductData {
     price?: string;
@@ -13,7 +14,7 @@ async function main() {
     if (args.length < 2) {
         console.error('Usage: npm run puppeteer <product_url> <region>');
         console.error(
-            'Example: npm run puppeteer "https://www.vprok.ru/product/..." "Санкт-Петербург и область"'
+          'Example: npm run puppeteer "https://www.vprok.ru/product/..." "Санкт-Петербург и область"'
         );
         process.exit(1);
     }
@@ -24,7 +25,7 @@ async function main() {
     console.log(`Region: ${region}`);
 
     const browser = await puppeteer.launch({
-        headless: true,
+        headless: false,
         defaultViewport: { width: 1920, height: 1080 },
     });
 
@@ -43,8 +44,16 @@ async function main() {
         console.log('✓ Region selected');
 
         const productData = await extractProductData(page);
-        console.log('✓ Data extracted:', productData);
+        console.log('✓ Data extracted');
 
+        // await page.evaluate(() => window.scrollTo(0, 0));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        await page.screenshot({ path: 'screenshot.jpeg', fullPage: true });
+        console.log('✓ Screenshot saved');
+
+        saveProductData(productData);
+        console.log('✓ Data saved to product.txt');
 
         console.log('✓ Done!');
     } catch (error) {
@@ -91,21 +100,12 @@ async function extractProductData(page: Page): Promise<ProductData> {
     const data: ProductData = {};
 
     try {
-        const priceDiscountElement = await page.$('.Price_role_discount__l_tpE');
-        if (priceDiscountElement) {
-            const priceText = await page.evaluate((el) => el.textContent?.trim(), priceDiscountElement);
+        const priceElement = await page.$('.Price_role_discount__l_tpE');
+        if (priceElement) {
+            const priceText = await page.evaluate((el) => el.textContent?.trim(), priceElement);
             const priceMatch = priceText?.match(/[\d,]+/);
             if (priceMatch) {
                 data.price = priceMatch[0].replace(',', '.');
-            }
-        } else {
-            const priceElement = await page.$('.Price_price__QzA8L:not(.Price_role_old__r1uT1)');
-            if (priceElement) {
-                const priceText = await page.evaluate((el) => el.textContent?.trim(), priceElement);
-                const priceMatch = priceText?.match(/[\d,]+/);
-                if (priceMatch) {
-                    data.price = priceMatch[0].replace(',', '.');
-                }
             }
         }
 
@@ -141,6 +141,17 @@ async function extractProductData(page: Page): Promise<ProductData> {
         console.error('Error extracting product data:', error);
         return data;
     }
+}
+
+function saveProductData(data: ProductData): void {
+    const lines: string[] = [];
+
+    if (data.price) lines.push(`price=${data.price}`);
+    if (data.priceOld) lines.push(`priceOld=${data.priceOld}`);
+    if (data.rating) lines.push(`rating=${data.rating}`);
+    if (data.reviewCount) lines.push(`reviewCount=${data.reviewCount}`);
+
+    fs.writeFileSync('product.txt', lines.join('\n'), 'utf-8');
 }
 
 main().catch(console.error);
