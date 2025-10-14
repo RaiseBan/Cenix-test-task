@@ -1,0 +1,30 @@
+{
+  "name": "vprok-parser",
+  "version": "1.0.0",
+  "description": "Parser for vprok.ru",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "puppeteer": "ts-node src/puppeteer-parser.ts",
+    "api": "ts-node src/api-parser.ts",
+    "lint": "eslint src/**/*.ts",
+    "format": "prettier --write src/**/*.ts"
+  },
+  "keywords": ["parser", "puppeteer", "typescript"],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.3.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.6.0"
+  },
+  "dependencies": {
+    "axios": "^1.7.0",
+    "puppeteer": "^24.24.1"
+  }
+}
