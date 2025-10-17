@@ -46,7 +46,6 @@ async function main() {
         const productData = await extractProductData(page);
         console.log('✓ Data extracted');
 
-        // await page.evaluate(() => window.scrollTo(0, 0));
         await new Promise((resolve) => setTimeout(resolve, 1000));
 
         await page.screenshot({ path: 'screenshot.jpeg', fullPage: true });
@@ -70,7 +69,7 @@ async function selectRegion(page: Page, region: string): Promise<boolean> {
 
         await page.click('.Region_region__6OUBn');
 
-        await page.waitForSelector('.UiRegionListBase_list__cH0fK', { timeout: 5000 });
+        await page.waitForSelector('.UiRegionListBase_list__cH0fK', { visible: true });
 
         const buttons = await page.$$('.UiRegionListBase_button__smgMH');
 
@@ -92,6 +91,8 @@ async function selectRegion(page: Page, region: string): Promise<boolean> {
         return false;
     } catch (error) {
         console.error('Error selecting region:', error);
+        console.log("\n" +
+            "Perhaps you have a bad internet connection...")
         return false;
     }
 }
@@ -100,41 +101,48 @@ async function extractProductData(page: Page): Promise<ProductData> {
     const data: ProductData = {};
 
     try {
-        const priceElement = await page.$('.Price_role_discount__l_tpE');
-        if (priceElement) {
-            const priceText = await page.evaluate((el) => el.textContent?.trim(), priceElement);
-            const priceMatch = priceText?.match(/[\d,]+/);
-            if (priceMatch) {
-                data.price = priceMatch[0].replace(',', '.');
+        const titleBlock = await page.$('.ProductPage_title__3hOtE');
+        const priceBlock = await page.$('.ProductPage_informationBlock__vDYCH');
+        console.log(priceBlock)
+        if (titleBlock) {
+            const ratingElement = await titleBlock.$('.ActionsRow_stars__EKt42');
+            if (ratingElement) {
+                const ratingText = await page.evaluate((el) => el.textContent?.trim(), ratingElement);
+                const ratingMatch = ratingText?.match(/[\d.]+/);
+                if (ratingMatch) {
+                    data.rating = ratingMatch[0];
+                }
+            }
+
+            const reviewElement = await titleBlock.$('.ActionsRow_reviews__AfSj_');
+            if (reviewElement) {
+                const reviewText = await page.evaluate((el) => el.textContent?.trim(), reviewElement);
+                const reviewMatch = reviewText?.match(/\d+/);
+                if (reviewMatch) {
+                    data.reviewCount = reviewMatch[0];
+                }
+            }
+        }
+        if (priceBlock){
+            const priceElement = await priceBlock.$('.Price_role_discount__l_tpE');
+            if (priceElement) {
+                const priceText = await page.evaluate((el) => el.textContent?.trim(), priceElement);
+                const priceMatch = priceText?.match(/[\d,]+/);
+                if (priceMatch) {
+                    data.price = priceMatch[0].replace(',', '.');
+                }
+            }
+
+            const oldPriceElement = await priceBlock.$('.PriceInfo_oldPrice__IW3mC');
+            if (oldPriceElement) {
+                const oldPriceText = await page.evaluate((el) => el.textContent?.trim(), oldPriceElement);
+                const oldPriceMatch = oldPriceText?.match(/[\d,]+/);
+                if (oldPriceMatch) {
+                    data.priceOld = oldPriceMatch[0].replace(',', '.');
+                }
             }
         }
 
-        const oldPriceElement = await page.$('.Price_role_old__r1uT1');
-        if (oldPriceElement) {
-            const oldPriceText = await page.evaluate((el) => el.textContent?.trim(), oldPriceElement);
-            const oldPriceMatch = oldPriceText?.match(/[\d,]+/);
-            if (oldPriceMatch) {
-                data.priceOld = oldPriceMatch[0].replace(',', '.');
-            }
-        }
-
-        const ratingElement = await page.$('.ActionsRow_stars__EKt42');
-        if (ratingElement) {
-            const ratingText = await page.evaluate((el) => el.textContent?.trim(), ratingElement);
-            const ratingMatch = ratingText?.match(/[\d.]+/);
-            if (ratingMatch) {
-                data.rating = ratingMatch[0];
-            }
-        }
-
-        const reviewElement = await page.$('.ActionsRow_reviews__AfSj_');
-        if (reviewElement) {
-            const reviewText = await page.evaluate((el) => el.textContent?.trim(), reviewElement);
-            const reviewMatch = reviewText?.match(/\d+/);
-            if (reviewMatch) {
-                data.reviewCount = reviewMatch[0];
-            }
-        }
 
         return data;
     } catch (error) {
