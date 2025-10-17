@@ -103,7 +103,6 @@ async function extractProductData(page: Page): Promise<ProductData> {
     try {
         const titleBlock = await page.$('.ProductPage_title__3hOtE');
         const priceBlock = await page.$('.ProductPage_informationBlock__vDYCH');
-        console.log(priceBlock)
         if (titleBlock) {
             const ratingElement = await titleBlock.$('.ActionsRow_stars__EKt42');
             if (ratingElement) {
